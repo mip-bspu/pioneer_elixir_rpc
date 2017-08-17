@@ -1,4 +1,4 @@
-defmodule PioneerRpc.RPC.PioneerRpc do
+defmodule PioneerRpc.PioneerRpcServer do
   require Logger
   use AMQP
 
@@ -40,10 +40,10 @@ defmodule PioneerRpc.RPC.PioneerRpc do
       end
 
       def init(_opts) do
-        Logger.info("#{unquote(name)}: starting RPC client.")
-        Logger.debug("#{unquote(name)}: connection '#{get_connection_string()}'")
+        Logger.info("#{unquote(name)}: starting RPC server.")
+        Logger.debug("#{unquote(name)}: server connection '#{get_connection_string()}'")
         resp = rabbitmq_connect()
-        Logger.debug("#{unquote(name)}: connected to RabbitMQ")
+        Logger.debug("#{unquote(name)}: server connected to RabbitMQ")
         resp
       end
 
@@ -68,6 +68,11 @@ defmodule PioneerRpc.RPC.PioneerRpc do
         {:noreply, state}
       end
 
+      def handle_info({:DOWN, _, :process, _pid, _reason}, state) do
+        {:ok, chan} = rabbitmq_connect()
+        {:noreply, chan}
+      end
+
       defp consume(state, meta, payload) do
         case deserialize(payload) do
           {:ok, args} ->
@@ -87,11 +92,6 @@ defmodule PioneerRpc.RPC.PioneerRpc do
           state,"", meta.reply_to, sresponse ,
           correlation_id: meta.correlation_id, content_type: content_type()
         )
-      end
-
-      def handle_info({:DOWN, _, :process, _pid, _reason}, state) do
-        {:ok, chan} = rabbitmq_connect()
-        {:noreply, chan}
       end
 
       defp rabbitmq_connect() do

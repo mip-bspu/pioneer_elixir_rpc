@@ -2,18 +2,6 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :pioneer_rpc,
-      ecto_repos: [PioneerRpc.Repo]
-
-config :pioneer_rpc, PioneerRpc.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "ni",
-  password: "gfkmhj",
-  database: "pioneer",
-  hostname: "localhost",
-  pool_size: 10
-
-
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

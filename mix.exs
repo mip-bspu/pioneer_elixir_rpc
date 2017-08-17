@@ -13,9 +13,9 @@ defmodule PioneerRpc.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger,:amqp,:ecto,],
+      extra_applications: [:logger,:amqp,],
       registered: [:pioneer_rpc],
-      mod: {PioneerRpc.Application, []}
+      # mod: {PioneerRpc.Application, []}
     ]
   end
 
@@ -23,9 +23,6 @@ defmodule PioneerRpc.Mixfile do
     [
       {:amqp, "~> 0.2.3"},
       {:poison, "~> 2.2"},
-      {:plug, "~> 1.3.4"},
-      {:ecto, "~> 2.1.6"},
-      {:postgrex, ">= 0.0.0"},
     ]
   end
 end
