@@ -5,7 +5,7 @@ defmodule PioneerRpc.PioneerRpcClient do
   defmacro __using__(opts) do
     target_module = __CALLER__.module
     name = Access.get(opts, :name, target_module)
-    timeout = Access.get(opts, :timeout, 1000)
+    timeout = Access.get(opts, :timeout, 5000)
     reconnect_interval = Access.get(opts, :reconnect_interval, 10000)
     connection_string = Access.get(opts, :connetion_string, "amqp://localhost")
     cleanup_interval = Access.get(opts, :cleanup_interval, 60000)
@@ -129,7 +129,7 @@ defmodule PioneerRpc.PioneerRpcClient do
         {:noreply, new_state}
       end
 
-      defp rpc(command, timeout \\ 1000) do
+      defp rpc(command, timeout \\ @timeout) do
         try do
           GenServer.call(unquote(name), {{:call, command}, :erlang.monotonic_time(:milli_seconds) + timeout}, timeout)
         catch
