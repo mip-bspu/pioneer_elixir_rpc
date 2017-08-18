@@ -123,6 +123,11 @@ defmodule PioneerRpc.PioneerRpcClient do
         {:noreply, cleanup_timedout_continuations(state)}
       end
 
+      def handle_info(:try_to_connect, state) do
+        new_state = connect(state)
+        {:noreply, new_state}
+      end
+
       def handle_info({:DOWN, _, :process, _pid, _reason}, state) do
         fail_all_continuations(state, :connection_lost)
         new_state = connect(:not_connected)

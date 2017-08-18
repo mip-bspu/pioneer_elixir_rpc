@@ -1,7 +1,7 @@
 defmodule PioneerRpc.Example.RpcServer do
   use PioneerRpc.PioneerRpcServer, [
     queues: ["sum","schoolInfo","auth"],
-    connetion_string: "amqp://core:123@10.1.1.200/pioneerApi",
+    # connetion_string: "amqp://core:123@10.1.1.200/pioneerApi",
   ]
 
   def sum([a,b]), do: a+b

@@ -43,8 +43,14 @@ defmodule PioneerRpc.PioneerRpcServer do
         Logger.info("#{unquote(name)}: starting RPC server.")
         Logger.debug("#{unquote(name)}: server connection '#{get_connection_string()}'")
         resp = rabbitmq_connect()
-        Logger.debug("#{unquote(name)}: server connected to RabbitMQ")
-        resp
+        if resp do
+          Logger.debug("#{unquote(name)}: server connected to RabbitMQ")
+          {:ok, resp}
+        else
+          Logger.warn("#{unquote(name)}: failed to connect to RabbitMQ during init. Scheduling reconnect.")
+          :erlang.send_after(unquote(reconnect_interval), :erlang.self(),:try_to_connect)
+          {:ok, :not_connected}
+        end
       end
 
       # Confirmation sent by the broker after registering this process as a consumer
@@ -68,9 +74,10 @@ defmodule PioneerRpc.PioneerRpcServer do
         {:noreply, state}
       end
 
+      def handle_info(:try_to_connect, state), do: {:noreply, connect(state)}
+
       def handle_info({:DOWN, _, :process, _pid, _reason}, state) do
-        {:ok, chan} = rabbitmq_connect()
-        {:noreply, chan}
+        {:noreply, connect(:not_connected)}
       end
 
       defp consume(state, meta, payload) do
@@ -94,6 +101,25 @@ defmodule PioneerRpc.PioneerRpcServer do
         )
       end
 
+      defp connect(state) do
+        Logger.warn("#{unquote(name)}: RabbitMQ connect...")
+        if state == :not_connected do
+          resp = rabbitmq_connect()
+          if resp do
+            Logger.warn("#{unquote(name)}: RabbitMQ connect succeeded.")
+            resp
+          else
+            Logger.warn("#{unquote(name)}: RabbitMQ connect failed. Scheduling reconnect.")
+            :erlang.send_after(unquote(reconnect_interval), :erlang.self(),:try_to_connect)
+            :not_connected
+          end
+        else
+          :io.format("~p", [state])
+          Logger.debug("#{unquote(name)}: trying to connect while aready connected.")
+          state
+        end
+      end
+
       defp rabbitmq_connect() do
         Logger.debug("#{unquote(name)}: Start connection...")
         case Connection.open(get_connection_string()) do
@@ -103,11 +129,11 @@ defmodule PioneerRpc.PioneerRpcServer do
             Basic.qos(chan, prefetch_count: 10)
             create_map(@queues,chan,&(Queue.declare(&1, &2, exclusive: true, arguments: [{"x-message-ttl", :long, 1000}])))
             create_map(@queues,chan,&(Basic.consume(&1, &2, nil, no_ack: true)))
-            {:ok, chan}
+            chan
           {:error, message} ->
             Logger.warn("#{unquote(name)}: Error open connection: #{message}")
             :timer.sleep(unquote(reconnect_interval))
-            rabbitmq_connect()
+            false
         end
       end
 
