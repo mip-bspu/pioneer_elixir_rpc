@@ -95,6 +95,7 @@ defmodule PioneerRpc.PioneerRpcServer do
       end
 
       defp rabbitmq_connect() do
+        Logger.debug("#{unquote(name)}: Start connection...")
         case Connection.open(get_connection_string()) do
           {:ok, conn} ->
             Process.monitor(conn.pid)
@@ -103,8 +104,8 @@ defmodule PioneerRpc.PioneerRpcServer do
             create_map(@queues,chan,&(Queue.declare(&1, &2, exclusive: true, arguments: [{"x-message-ttl", :long, 1000}])))
             create_map(@queues,chan,&(Basic.consume(&1, &2, nil, no_ack: true)))
             {:ok, chan}
-          {:error, _} ->
-            Logger.warn("#{unquote(name)}: Error open connection")
+          {:error, message} ->
+            Logger.warn("#{unquote(name)}: Error open connection: #{message}")
             :timer.sleep(unquote(reconnect_interval))
             rabbitmq_connect()
         end
