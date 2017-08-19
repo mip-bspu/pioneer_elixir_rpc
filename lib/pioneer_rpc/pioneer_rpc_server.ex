@@ -83,8 +83,9 @@ defmodule PioneerRpc.PioneerRpcServer do
       defp consume(state, meta, payload) do
         case deserialize(payload) do
           {:ok, args} ->
+            Logger.debug("#{unquote(name)}: apply function [#{meta.routing_key}]...")
             response = try do
-              apply(unquote(target_module), String.to_atom(meta.routing_key), [args])
+              apply(unquote(target_module), String.to_atom(meta.routing_key), args)
             rescue
               error ->
                 Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}] : #{error}")
