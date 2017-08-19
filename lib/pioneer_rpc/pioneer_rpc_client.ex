@@ -204,7 +204,7 @@ defmodule PioneerRpc.PioneerRpcClient do
           %{continuations: old_continuations} = state
           clist = Map.to_list(old_continuations)
           new_continuations = clist |> Enum.reject(fn({_, {_, timeout}}) -> continuation_timed_out timeout end)
-          Logger.debug("#{unquote(name)}: timed out continuations cleaned: before #{length(clist)}, after #{length(new_continuations)}")
+          # Logger.debug("#{unquote(name)}: timed out continuations cleaned: before #{length(clist)}, after #{length(new_continuations)}")
           %{state | :continuations => Enum.into(new_continuations, %{})}
         end
       end
