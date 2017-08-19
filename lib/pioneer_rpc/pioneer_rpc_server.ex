@@ -87,7 +87,7 @@ defmodule PioneerRpc.PioneerRpcServer do
               apply(unquote(target_module), String.to_atom(meta.routing_key), [args])
             rescue
               error ->
-                Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}] : #{error.message}")
+                Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}] : #{error}")
                 %{error: 500, message: error.message}
             end
             {:ok, sresponse} = serialize(response)

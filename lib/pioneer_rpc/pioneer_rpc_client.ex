@@ -134,7 +134,7 @@ defmodule PioneerRpc.PioneerRpcClient do
         {:noreply, new_state}
       end
 
-      defp rpc(command, timeout \\ @timeout) do
+      def rpc(command, timeout \\ @timeout) do
         try do
           GenServer.call(unquote(name), {{:call, command}, :erlang.monotonic_time(:milli_seconds) + timeout}, timeout)
         catch
