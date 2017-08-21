@@ -75,8 +75,8 @@ defmodule PioneerRpc.PioneerRpcClient do
         if cont do
           {from, timeout} = cont
           if not continuation_timed_out(timeout) do
-            {:ok, data} = deserialize(sdata)
-            GenServer.reply(from, data)
+            response = deserialize(sdata)
+            GenServer.reply(from, response)
             {:noreply, %{channel: channel,
                          reply_queue: reply_queue,
                          correlation_id: correlation_id,
@@ -140,7 +140,7 @@ defmodule PioneerRpc.PioneerRpcClient do
         catch
           :exit, {:timeout, _} ->
               Logger.warn("#{unquote(name)}: timeout call.")
-            :timeout
+            {:error, :timeout}
         end
       end
 
