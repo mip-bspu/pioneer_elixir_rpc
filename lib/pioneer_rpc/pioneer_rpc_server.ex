@@ -2,9 +2,9 @@ defmodule PioneerRpc.PioneerRpcServer do
   require Logger
   use AMQP
 
-  defmodule State do
-    defstruct [fn: nil,channel: nil]
-  end
+#  defmodule State do
+#    defstruct [fn: nil,channel: nil]
+#  end
 
   defmacro __using__(opts) do
 
@@ -87,9 +87,13 @@ defmodule PioneerRpc.PioneerRpcServer do
             response = try do
               apply(unquote(target_module), String.to_atom(meta.routing_key), args)
             rescue
+              error in UndefinedFunctionError ->
+                Logger.debug("#{unquote(name)}: redirect function urpc...")
+                apply(unquote(target_module), :urpc, [args])
               error ->
+                Logger.error(error)
                 Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}]")
-                %{error: 500, message: error} 
+                %{error: 500, message: error}
             end
             {:ok, sresponse} = serialize(response)
           _ ->
