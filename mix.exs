@@ -21,8 +21,9 @@ defmodule PioneerRpc.Mixfile do
 
   defp deps do
     [
-      {:amqp, "~> 0.2.3"},
+
       {:poison, "~> 2.2"},
+      {:amqp, "~> 0.2.3"},
     ]
   end
 end

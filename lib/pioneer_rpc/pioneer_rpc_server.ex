@@ -12,14 +12,12 @@ defmodule PioneerRpc.PioneerRpcServer do
     name = Access.get(opts, :name, target_module)
     reconnect_interval = Access.get(opts, :reconnect_interval, 10000)
     connection_string = Access.get(opts, :connetion_string, "amqp://localhost")
-    {:ok, queues} = Access.fetch(opts, :queues)
+    queues = Access.get(opts, :queues,[])
 
     quote do
       require Logger
       use GenServer
       use AMQP
-
-      @queues unquote(queues)
 
       defp get_connection_string do
         unquote(case connection_string do
@@ -132,8 +130,9 @@ defmodule PioneerRpc.PioneerRpcServer do
             Process.monitor(conn.pid)
             {:ok, chan} = Channel.open(conn)
             Basic.qos(chan, prefetch_count: 10)
-            create_map(@queues,chan,&(Queue.declare(&1, &2, exclusive: true, arguments: [{"x-message-ttl", :long, 1000}])))
-            create_map(@queues,chan,&(Basic.consume(&1, &2, nil, no_ack: true)))
+
+            create_map(unquote(queues),chan,&(Queue.declare(&1, &2, exclusive: true, arguments: [{"x-message-ttl", :long, 1000}])))
+            create_map(unquote(queues),chan,&(Basic.consume(&1, &2, nil, no_ack: true)))
             chan
           {:error, message} ->
             Logger.warn("#{unquote(name)}: Error open connection: #{message}")
