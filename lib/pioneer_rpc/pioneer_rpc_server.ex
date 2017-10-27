@@ -92,12 +92,12 @@ defmodule PioneerRpc.PioneerRpcServer do
                   apply(unquote(target_module), :urpc, [args])
                 rescue
                   error ->
-                    Logger.error(error)
+                    Logger.error(Exception.format(:error, error))
                     Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}]")
                     %{error: 500, message: error}
                 end
               error ->
-                Logger.error(error)
+                Logger.error(Exception.format(:error, error))
                 Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}]")
                 %{error: 500, message: error}
             end
@@ -122,7 +122,7 @@ defmodule PioneerRpc.PioneerRpcServer do
           )
         rescue
           error ->
-            Logger.error(error)
+            Logger.error(Exception.format(:error, error))
             Logger.error("#{unquote(name)}: Error publish [#{meta.reply_to}]")
         after
            Logger.debug("#{unquote(name)}: end publish #{meta.routing_key}")
