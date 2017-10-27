@@ -79,7 +79,7 @@ defmodule PioneerRpc.PioneerRpcServer do
       end
 
       defp consume(state, meta, payload) do
-        # Logger.debug("#{unquote(name)}: start work")
+        Logger.debug("#{unquote(name)}: start work #{meta.routing_key}")
         response = case deserialize(payload) do
           {:ok, args} ->
             Logger.debug("#{unquote(name)}: apply function [#{meta.routing_key}]...")
@@ -101,18 +101,21 @@ defmodule PioneerRpc.PioneerRpcServer do
                 Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}]")
                 %{error: 500, message: error}
             end
-
           _ ->
             Logger.error("#{unquote(name)}: Error parse #{payload}")
             %{error: 400, message: "parse args error"}
         end
 
-        sresponse case Poison.encode(response) do
+        Logger.debug("#{unquote(name)}: response #{meta.routing_key}")
+        IO.inspect(response)
+
+        sresponse = case Poison.encode(response) do
           {:ok, data} -> data
           _ -> Poison.encode!(%{error: 500, message: "error encode respons to json"})
         end
 
         try do
+          Logger.debug("#{unquote(name)}: start publish #{meta.routing_key}")
           AMQP.Basic.publish(
             state,"", meta.reply_to, sresponse ,
             correlation_id: meta.correlation_id, content_type: content_type()
@@ -121,6 +124,8 @@ defmodule PioneerRpc.PioneerRpcServer do
           error ->
             Logger.error(error)
             Logger.error("#{unquote(name)}: Error publish [#{meta.reply_to}]")
+        after
+           Logger.debug("#{unquote(name)}: end publish #{meta.routing_key}")
         end
       end
 
