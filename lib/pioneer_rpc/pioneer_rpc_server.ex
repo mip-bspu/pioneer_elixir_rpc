@@ -79,29 +79,49 @@ defmodule PioneerRpc.PioneerRpcServer do
       end
 
       defp consume(state, meta, payload) do
-        case deserialize(payload) do
+        # Logger.debug("#{unquote(name)}: start work")
+        response = case deserialize(payload) do
           {:ok, args} ->
             Logger.debug("#{unquote(name)}: apply function [#{meta.routing_key}]...")
-            response = try do
+            try do
               apply(unquote(target_module), String.to_atom(meta.routing_key), args)
             rescue
               error in UndefinedFunctionError ->
                 Logger.debug("#{unquote(name)}: redirect function urpc...")
-                apply(unquote(target_module), :urpc, [args])
+                try do
+                  apply(unquote(target_module), :urpc, [args])
+                rescue
+                  error ->
+                    Logger.error(error)
+                    Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}]")
+                    %{error: 500, message: error}
+                end
               error ->
                 Logger.error(error)
                 Logger.error("#{unquote(name)}: Error apply function [#{meta.routing_key}]")
                 %{error: 500, message: error}
             end
-            {:ok, sresponse} = serialize(response)
+
           _ ->
             Logger.error("#{unquote(name)}: Error parse #{payload}")
-            {:ok, sresponse} = serialize(%{error: 400, message: "parse args error"})
+            %{error: 400, message: "parse args error"}
         end
-        AMQP.Basic.publish(
-          state,"", meta.reply_to, sresponse ,
-          correlation_id: meta.correlation_id, content_type: content_type()
-        )
+
+        sresponse case Poison.encode(response) do
+          {:ok, data} -> data
+          _ -> Poison.encode!(%{error: 500, message: "error encode respons to json"})
+        end
+
+        try do
+          AMQP.Basic.publish(
+            state,"", meta.reply_to, sresponse ,
+            correlation_id: meta.correlation_id, content_type: content_type()
+          )
+        rescue
+          error ->
+            Logger.error(error)
+            Logger.error("#{unquote(name)}: Error publish [#{meta.reply_to}]")
+        end
       end
 
       defp connect(state) do
