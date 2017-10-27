@@ -107,7 +107,6 @@ defmodule PioneerRpc.PioneerRpcServer do
         end
 
         Logger.debug("#{unquote(name)}: response #{meta.routing_key}")
-        IO.inspect(response)
 
         sresponse = case Poison.encode(response) do
           {:ok, data} -> data
