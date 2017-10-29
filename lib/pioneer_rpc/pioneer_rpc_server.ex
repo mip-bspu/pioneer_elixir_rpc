@@ -87,7 +87,7 @@ defmodule PioneerRpc.PioneerRpcServer do
               apply(unquote(target_module), String.to_atom(meta.routing_key), args)
             rescue
               error in UndefinedFunctionError ->
-                Logger.debug("#{unquote(name)}: redirect function urpc...")
+                Logger.debug("#{unquote(name)}: (#{meta.routing_key}) redirect function urpc...")
                 try do
                   apply(unquote(target_module), :urpc, [args])
                 rescue
