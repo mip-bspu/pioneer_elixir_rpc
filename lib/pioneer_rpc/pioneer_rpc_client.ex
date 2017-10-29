@@ -102,14 +102,16 @@ defmodule PioneerRpc.PioneerRpcClient do
 
           encoded_correlation_id = Integer.to_string(correlation_id)
 
-          :ok = Basic.publish(channel,
-            "",
-            queue,
-            sheaders,
-            reply_to: reply_queue,
-            correlation_id: encoded_correlation_id,
-            content_type: content_type()
-          )
+          spawn fn ->
+            Basic.publish(channel,
+              "",
+              queue,
+              sheaders,
+              reply_to: reply_queue,
+              correlation_id: encoded_correlation_id,
+              content_type: content_type()
+            )
+          end
 
           {:noreply, %{channel: channel,
                        reply_queue: reply_queue,
@@ -117,6 +119,7 @@ defmodule PioneerRpc.PioneerRpcClient do
                        continuations: Map.put(continuations, encoded_correlation_id, {from, timeout})}}
         end
       end
+
 
       def handle_info(:cleanup_trigger, state) do
         :erlang.send_after(unquote(cleanup_interval), :erlang.self(), :cleanup_trigger)
