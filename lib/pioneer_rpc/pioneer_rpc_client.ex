@@ -111,7 +111,7 @@ defmodule PioneerRpc.PioneerRpcClient do
             correlation_id: encoded_correlation_id,
             content_type: content_type(),
             persistent: false,
-            immediate: true
+            mandatory: true
           ) do
             :ok -> {:noreply, %{channel: channel,
                          reply_queue: reply_queue,
