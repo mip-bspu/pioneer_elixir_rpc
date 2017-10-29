@@ -102,21 +102,27 @@ defmodule PioneerRpc.PioneerRpcClient do
 
           encoded_correlation_id = Integer.to_string(correlation_id)
 
-          spawn fn ->
-            Basic.publish(channel,
-              "",
-              queue,
-              sheaders,
-              reply_to: reply_queue,
-              correlation_id: encoded_correlation_id,
-              content_type: content_type()
-            )
+          case Basic.publish(
+            channel,
+            "",
+            queue,
+            sheaders,
+            reply_to: reply_queue,
+            correlation_id: encoded_correlation_id,
+            content_type: content_type(),
+            persistent: false,
+            immediate: true
+          ) do
+            :ok -> {:noreply, %{channel: channel,
+                         reply_queue: reply_queue,
+                         correlation_id: correlation_id + 1,
+                         continuations: Map.put(continuations, encoded_correlation_id, {from, timeout})}}
+            _ -> {:reply,{:error, :timeout}, %{channel: channel,
+                         reply_queue: reply_queue,
+                         correlation_id: correlation_id + 1,
+                         continuations: Map.put(continuations, encoded_correlation_id, {from, timeout})}}
           end
 
-          {:noreply, %{channel: channel,
-                       reply_queue: reply_queue,
-                       correlation_id: correlation_id + 1,
-                       continuations: Map.put(continuations, encoded_correlation_id, {from, timeout})}}
         end
       end
 
