@@ -92,7 +92,7 @@ defmodule PioneerRpc.PioneerRpcClient do
       def handle_call({{:call, command}, timeout}, from, state) do
         {queue, headers} = command
         if state == :not_connected do
-          {:reply, :not_connected}
+          {:reply, {:error, :not_connected}, :not_connected}
         else
           {:ok, sheaders} = serialize(headers)
           %{channel: channel,
