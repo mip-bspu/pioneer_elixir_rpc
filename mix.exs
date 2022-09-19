@@ -21,7 +21,7 @@ defmodule PioneerRpc.Mixfile do
 
   defp deps do
     [
-      {:poison, "~> 4.0.1"},
+      {:poison, "~> 4.0.1", override: true},
       {:amqp, "~> 2.1"},
     ]
   end
