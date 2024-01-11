@@ -33,7 +33,7 @@ defmodule PioneerRpc.PioneerRpcServer do
             end)
       end
 
-      def start_link do
+      def start_link(state\\[]) do
         GenServer.start_link(__MODULE__, [], name: unquote(name))
       end
 
@@ -45,7 +45,7 @@ defmodule PioneerRpc.PioneerRpcServer do
           Logger.debug("#{unquote(name)}: server connected to RabbitMQ")
           {:ok, resp}
         else
-          Logger.warn("#{unquote(name)}: failed to connect to RabbitMQ during init. Scheduling reconnect.")
+          Logger.warning("#{unquote(name)}: failed to connect to RabbitMQ during init. Scheduling reconnect.")
           :erlang.send_after(unquote(reconnect_interval), :erlang.self(),:try_to_connect)
           {:ok, :not_connected}
         end
@@ -84,9 +84,12 @@ defmodule PioneerRpc.PioneerRpcServer do
           {:ok, args} ->
             Logger.debug("#{unquote(name)}: apply function [#{meta.routing_key}]...")
             try do
+              IO.inspect(String.to_atom(meta.routing_key))
+              IO.inspect(args)
               apply(unquote(target_module), String.to_atom(meta.routing_key), args)
             rescue
               error in UndefinedFunctionError ->
+                IO.inspect(error)
                 Logger.debug("#{unquote(name)}: (#{meta.routing_key}) redirect function urpc...")
                 try do
                   apply(unquote(target_module), :urpc, [args])
@@ -129,14 +132,14 @@ defmodule PioneerRpc.PioneerRpcServer do
       end
 
       defp connect(state) do
-        Logger.warn("#{unquote(name)}: RabbitMQ connect...")
+        Logger.warning("#{unquote(name)}: RabbitMQ connect...")
         if state == :not_connected do
           resp = rabbitmq_connect()
           if resp do
-            Logger.warn("#{unquote(name)}: RabbitMQ connect succeeded.")
+            Logger.warning("#{unquote(name)}: RabbitMQ connect succeeded.")
             resp
           else
-            Logger.warn("#{unquote(name)}: RabbitMQ connect failed. Scheduling reconnect.")
+            Logger.warning("#{unquote(name)}: RabbitMQ connect failed. Scheduling reconnect.")
             :erlang.send_after(unquote(reconnect_interval), :erlang.self(),:try_to_connect)
             :not_connected
           end
@@ -159,7 +162,7 @@ defmodule PioneerRpc.PioneerRpcServer do
             create_map(unquote(queues),chan,&(Basic.consume(&1, &2, nil, no_ack: true)))
             chan
           {:error, message} ->
-            Logger.warn("#{unquote(name)}: Error open connection: #{message}")
+            Logger.warning("#{unquote(name)}: Error open connection: #{message}")
             :timer.sleep(unquote(reconnect_interval))
             false
         end

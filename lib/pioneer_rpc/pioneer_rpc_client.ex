@@ -33,7 +33,7 @@ defmodule PioneerRpc.PioneerRpcClient do
             end)
       end
 
-      def start_link do
+      def start_link(state\\[]) do
         GenServer.start_link(__MODULE__, [], name: unquote(name))
       end
 
@@ -45,7 +45,7 @@ defmodule PioneerRpc.PioneerRpcClient do
           Logger.debug("#{unquote(name)}: client connected to RabbitMQ")
           {:ok, resp}
         else
-          Logger.warn("#{unquote(name)}: failed to connect to RabbitMQ during init. Scheduling reconnect.")
+          Logger.warning("#{unquote(name)}: failed to connect to RabbitMQ during init. Scheduling reconnect.")
           :erlang.send_after(unquote(reconnect_interval), :erlang.self(),:try_to_connect)
           {:ok, :not_connected}
         end
@@ -148,20 +148,20 @@ defmodule PioneerRpc.PioneerRpcClient do
           GenServer.call(unquote(name), {{:call, command}, :erlang.monotonic_time(:milli_seconds) + timeout}, timeout)
         catch
           :exit, {:timeout, _} ->
-              Logger.warn("#{unquote(name)}: timeout call.")
+              Logger.warning("#{unquote(name)}: timeout call.")
             {:error, :timeout}
         end
       end
 
       defp connect(state) do
-        Logger.warn("#{unquote(name)}: RabbitMQ connect...")
+        Logger.warning("#{unquote(name)}: RabbitMQ connect...")
         if state == :not_connected do
           resp = rabbitmq_connect()
           if resp do
-            Logger.warn("#{unquote(name)}: RabbitMQ connect succeeded.")
+            Logger.warning("#{unquote(name)}: RabbitMQ connect succeeded.")
             resp
           else
-            Logger.warn("#{unquote(name)}: RabbitMQ connect failed. Scheduling reconnect.")
+            Logger.warning("#{unquote(name)}: RabbitMQ connect failed. Scheduling reconnect.")
             :erlang.send_after(unquote(reconnect_interval), :erlang.self(),:try_to_connect)
             :not_connected
           end
@@ -193,7 +193,7 @@ defmodule PioneerRpc.PioneerRpcClient do
               correlation_id: 0,
               continuations: %{}}
           {:error, _} ->
-            Logger.warn("#{unquote(name)}: Error open connection")
+            Logger.warning("#{unquote(name)}: Error open connection")
             false
         end
       end

@@ -3,26 +3,27 @@ defmodule PioneerRpc.Mixfile do
 
   def project do
     [app: :pioneer_rpc,
-     version: "0.1.2",
+     version: "0.1.3",
      elixir: "~> 1.4",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
+     build_embedded: Mix.env() == :prod,
+     start_permanent: Mix.env() == :prod,
      deps: deps()]
   end
 
 
   def application do
     [
+
       extra_applications: [:logger,:amqp,],
       registered: [:pioneer_rpc],
-      # mod: {PioneerRpc.Application, []}
+      # mod: {App, []}
     ]
   end
 
   defp deps do
     [
       {:poison, "~> 4.0.1", override: true},
-      {:amqp, "~> 2.1"},
+      {:amqp, "~> 3.2"},
     ]
   end
 end
