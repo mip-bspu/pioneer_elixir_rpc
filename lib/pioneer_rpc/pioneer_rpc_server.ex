@@ -11,7 +11,7 @@ defmodule PioneerRpc.PioneerRpcServer do
     target_module = __CALLER__.module
     name = Access.get(opts, :name, target_module)
     reconnect_interval = Access.get(opts, :reconnect_interval, 10000)
-    connection_string = Access.get(opts, :connetion_string, "amqp://localhost")
+    connection_string = Access.get(opts, :connection_string, Access.get(opts, :connetion_string, "amqp://localhost"))
     queues = Access.get(opts, :queues,[])
 
     quote do
