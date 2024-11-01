@@ -7,7 +7,14 @@ defmodule PioneerRpc.PioneerRpcClient do
     name = Access.get(opts, :name, target_module)
     timeout = Access.get(opts, :timeout, 5000)
     reconnect_interval = Access.get(opts, :reconnect_interval, 10000)
-    connection_string = Access.get(opts, :connection_string, Access.get(opts, :connetion_string, "amqp://localhost"))
+
+    connection_string =
+      Access.get(
+        opts,
+        :connection_string,
+        Access.get(opts, :connetion_string, "amqp://localhost")
+      )
+
     cleanup_interval = Access.get(opts, :cleanup_interval, 60000)
     queues = Access.get(opts, :queues, [])
 
@@ -180,7 +187,7 @@ defmodule PioneerRpc.PioneerRpcClient do
           )
         catch
           :exit, {:timeout, _} ->
-            Logger.warning("#{unquote(name)}: timeout call.")
+            Logger.info("#{unquote(name)}: timeout call.")
             {:error, :timeout}
         end
       end
