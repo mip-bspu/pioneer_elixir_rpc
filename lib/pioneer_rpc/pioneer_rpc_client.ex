@@ -130,35 +130,38 @@ defmodule PioneerRpc.PioneerRpcClient do
 
           encoded_correlation_id = Integer.to_string(correlation_id)
 
-          case Basic.publish(
-                 channel,
-                 "",
-                 queue,
-                 sheaders,
-                 reply_to: reply_queue,
-                 correlation_id: encoded_correlation_id,
-                 content_type: content_type(),
-                 persistent: false,
-                 mandatory: true
-               ) do
-            :ok ->
-              {:noreply,
-               %{
-                 channel: channel,
-                 reply_queue: reply_queue,
-                 correlation_id: correlation_id + 1,
-                 continuations: Map.put(continuations, encoded_correlation_id, {from, timeout})
-               }}
+          new_continuations =
+            Map.put(continuations, encoded_correlation_id, {from, timeout})
 
-            _ ->
-              {:reply, {:error, :timeout},
-               %{
-                 channel: channel,
-                 reply_queue: reply_queue,
-                 correlation_id: correlation_id + 1,
-                 continuations: Map.put(continuations, encoded_correlation_id, {from, timeout})
-               }}
-          end
+          # Выносим Basic.publish в отдельный процесс,
+          # чтобы не блокировать GenServer при проблемах с AMQP (half-open соединение).
+          spawn(fn ->
+            case Basic.publish(
+                   channel,
+                   "",
+                   queue,
+                   sheaders,
+                   reply_to: reply_queue,
+                   correlation_id: encoded_correlation_id,
+                   content_type: content_type(),
+                   persistent: false,
+                   mandatory: true
+                 ) do
+              :ok ->
+                :ok
+
+              _ ->
+                GenServer.reply(from, {:error, :publish_failed})
+            end
+          end)
+
+          {:noreply,
+           %{
+             channel: channel,
+             reply_queue: reply_queue,
+             correlation_id: correlation_id + 1,
+             continuations: new_continuations
+           }}
         end
       end
 
