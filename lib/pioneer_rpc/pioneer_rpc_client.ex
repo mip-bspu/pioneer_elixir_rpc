@@ -135,24 +135,19 @@ defmodule PioneerRpc.PioneerRpcClient do
 
           # Выносим Basic.publish в отдельный процесс,
           # чтобы не блокировать GenServer при проблемах с AMQP (half-open соединение).
+          # Убираем mandatory: true — при проблемах с TCP publish может зависнуть навсегда.
           spawn(fn ->
-            case Basic.publish(
-                   channel,
-                   "",
-                   queue,
-                   sheaders,
-                   reply_to: reply_queue,
-                   correlation_id: encoded_correlation_id,
-                   content_type: content_type(),
-                   persistent: false,
-                   mandatory: true
-                 ) do
-              :ok ->
-                :ok
-
-              _ ->
-                GenServer.reply(from, {:error, :publish_failed})
-            end
+            Basic.publish(
+              channel,
+              "",
+              queue,
+              sheaders,
+              reply_to: reply_queue,
+              correlation_id: encoded_correlation_id,
+              content_type: content_type(),
+              persistent: false,
+              mandatory: false
+            )
           end)
 
           {:noreply,
@@ -217,7 +212,7 @@ defmodule PioneerRpc.PioneerRpcClient do
       end
 
       defp rabbitmq_connect() do
-        case Connection.open(get_connection_string()) do
+        case Connection.open(get_connection_string(), heartbeat: 10) do
           {:ok, conn} ->
             Logger.debug("#{unquote(name)}: Start process monitor")
             Process.monitor(conn.pid)
